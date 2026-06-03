@@ -19,14 +19,11 @@ section h2 {color:var(--azul); font-size:24px;}
 input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; margin-bottom:12px; box-sizing:border-box; font-size:15px;}
 .btn {padding:14px 30px; background:var(--verde); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; font-size:16px;}
 .btn-danger {background:#d32f2f;}
+.btn-warning {background:#ff9800;}
 .codigo {font-weight:bold; color:#e65100; font-size:16px;}
 table {width:100%; border-collapse:collapse; margin-top:20px;}
 th {background:var(--azul); color:white; padding:15px; text-align:left;}
 td {padding:14px; border-bottom:1px solid #eee;}
-.comprovante {border:4px solid var(--azul); border-radius:20px; padding:35px; margin-top:25px; background:linear-gradient(135deg,#fff 0%,#fffde7 100%);}
-.comprovante h2 {text-align:center; color:var(--azul); margin-top:0; font-size:28px;}
-.comprovante.codigo-big {font-size:38px; font-weight:bold; color:#e65100; background:var(--amarelo); padding:18px; border-radius:12px; text-align:center; margin:25px 0; border:3px solid var(--azul);}
-.jogo-linha {display:flex; justify-content:space-between; padding:15px; background:#f8f9fa; margin-bottom:10px; border-radius:10px; font-weight:600; border-left:5px solid var(--verde);}
 </style>
 </head>
 <body>
@@ -40,6 +37,13 @@ td {padding:14px; border-bottom:1px solid #eee;}
   <div class="container">
     <h1>🇧🇷 BOLÃO DA COPA DO MUNDO 2026 🇧🇷</h1>
     <p class="subtitle">Painel de Administração</p>
+    
+    <section style="background:#fff3e0; border:3px solid #ff9800; border-radius:15px; padding:25px;">
+      <h2 style="color:#e65100; margin-top:0;">🔥 Finalizar Rodada</h2>
+      <p style="color:#666; margin-bottom:20px;">Atenção: Isso vai apagar TODOS os jogos da tela do jogador e limpar TODOS os palpites. Use quando a rodada acabar.</p>
+      <button class="btn btn-warning" onclick="finalizarRodada()">Finalizar e Limpar Tudo</button>
+    </section>
+
     <section>
       <h2>⚽ Enviar Jogo para os Jogadores</h2>
       <input type="text" id="timeA" placeholder="Time A - Ex: Brasil">
@@ -114,6 +118,31 @@ window.deletarJogo = async function(id) {
   if(confirm("Remover este jogo?")) {await deleteDoc(doc(db, "jogos", id)); carregarJogos();}
 }
 
+window.finalizarRodada = async function() {
+  if(!confirm("TEM CERTEZA? Isso vai apagar todos os jogos e todos os palpites. Não tem como desfazer!")) return;
+  
+  try {
+    // Apagar todos os jogos
+    const jogosSnap = await getDocs(collection(db, "jogos"));
+    for(const d of jogosSnap.docs) {
+      await deleteDoc(doc(db, "jogos", d.id));
+    }
+    
+    // Apagar todos os palpites
+    const palpitesSnap = await getDocs(collection(db, "palpites"));
+    for(const d of palpitesSnap.docs) {
+      await deleteDoc(doc(db, "palpites", d.id));
+    }
+    
+    alert("Rodada finalizada! Tela do jogador limpa e palpites apagados.");
+    carregarJogos();
+    carregarPalpites();
+    document.getElementById("comprovanteBox").innerHTML = "";
+  } catch(e) {
+    alert("Erro ao limpar: " + e.message);
+  }
+}
+
 window.gerarComprovante = async function() {
   const codigo = document.getElementById("codigoBusca").value.trim().toUpperCase();
   if(!codigo) return alert("Digite um código!");
@@ -122,17 +151,38 @@ window.gerarComprovante = async function() {
   if(snap.empty) return alert("Código não encontrado!");
   const data = snap.docs[0].data();
   const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
-  let html = `<div class="comprovante"><h2>🏆 COMPROVANTE OFICIAL - BOLÃO COPA 2026</h2>
-    <div class="codigo-big">${data.codigo}</div>
-    <div style="font-size:18px; margin-bottom:10px;"><strong>Jogador:</strong> ${data.nome}</div>
-    <div style="font-size:18px; margin-bottom:10px;"><strong>WhatsApp:</strong> ${data.telefone || '-'}</div>
-    <div style="font-size:16px; margin-bottom:25px;"><strong>Data do Palpite:</strong> ${dataFormatada}</div>
-    <div style="font-size:14px; text-align:center; margin-bottom:25px; color:#666;">Dúvidas? Contato ADM: +55 91 8176-1730</div>
-    <h3 style="color:#002776; border-bottom:3px solid #ffdf00; padding-bottom:10px;">Seus Palpites:</h3>`;
-  data.palpites.forEach(p => {
-    html += `<div class="jogo-linha"><span>${p.timeA} vs ${p.timeB}</span><span style="font-size:20px;">${p.placarA} X ${p.placarB}</span></div>`;
-  });
-  html += `</div><button class="btn" style="margin-top:20px; width:100%;" onclick="window.print()">🖨️ Imprimir ou Salvar PDF</button>`;
+  
+  let html = `
+  <div style="max-width:700px; margin:30px auto; background:white; border:4px solid #002776; border-radius:20px; padding:40px; box-shadow:0 8px 30px rgba(0,39,118,0.15);">
+    <div style="text-align:center; border-bottom:4px solid #ffdf00; padding-bottom:25px; margin-bottom:30px;">
+      <div style="font-size:40px; margin-bottom:10px;">🇧🇷</div>
+      <h1 style="color:#002776; margin:0; font-size:32px;">BOLÃO DA COPA DO MUNDO 2026</h1>
+      <p style="color:#666; margin:10px 0 0 0; font-size:14px;">COMPROVANTE OFICIAL DE PALPITE</p>
+    </div>
+    <div style="background:#ffdf00; color:#e65100; text-align:center; padding:20px; border-radius:15px; margin-bottom:30px; border:3px solid #002776;">
+      <div style="font-size:14px; font-weight:bold;">CÓDIGO DO PALPITE</div>
+      <div style="font-size:42px; font-weight:bold; letter-spacing:3px;">${data.codigo}</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; font-size:17px;">
+      <div><strong style="color:#002776;">Jogador:</strong><br>${data.nome}</div>
+      <div><strong style="color:#002776;">WhatsApp:</strong><br>${data.telefone || '-'}</div>
+      <div><strong style="color:#002776;">Data/Hora:</strong><br>${dataFormatada}</div>
+      <div><strong style="color:#002776;">Contato ADM:</strong><br>+55 91 8176-1730</div>
+    </div>
+    <div style="border-top:3px solid #009c3b; padding-top:25px;">
+      <h3 style="color:#002776; margin-top:0; font-size:22px;">⚽ Seus Palpites:</h3>
+      ${data.palpites.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:18px; margin-bottom:12px; border-radius:12px; border-left:6px solid #009c3b; font-size:17px; font-weight:600;">
+          <span>${p.timeA} vs ${p.timeB}</span>
+          <span style="font-size:24px; color:#002776;">${p.placarA} X ${p.placarB}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div style="text-align:center; margin-top:35px; padding-top:25px; border-top:2px dashed #ccc; color:#666; font-size:13px;">
+      Guarde este comprovante. Em caso de dúvidas, entre em contato com o ADM.
+    </div>
+  </div>
+  <button class="btn" style="margin:20px auto; display:block; max-width:700px;" onclick="window.print()">🖨️ Imprimir ou Salvar PDF</button>`;
   document.getElementById("comprovanteBox").innerHTML = html;
 }
 
