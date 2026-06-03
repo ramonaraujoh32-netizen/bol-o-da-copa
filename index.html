@@ -24,6 +24,7 @@ input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; marg
   <p class="subtitle">Faça seu palpite e concorra!</p>
   <div id="telaInicial">
     <input type="text" id="nomeJogador" placeholder="Digite seu nome completo">
+    <input type="tel" id="telefoneJogador" placeholder="Digite seu WhatsApp - Ex: 11999999">
     <button class="btn" onclick="iniciar()">Começar Palpite</button>
   </div>
   <div id="telaJogos" style="display:none;"></div>
@@ -32,24 +33,36 @@ input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; marg
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-const app = initializeApp({
-  apiKey: "AIzaSyAAM7MPAOuz4Fmp2rNq64BLlEcuoXo5nyM",
-  authDomain: "bolao-copa.firebaseapp.com",
-  projectId: "bolao-copa",
-  storageBucket: "bolao-copa.firebasestorage.app",
-  messagingSenderId: "857500902607",
-  appId: "1:857500902607:web:3120a10c658f0b4cde6a75"
-});
+
+const firebaseConfig = {
+  apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
+  authDomain: "bolao-4c08e.firebaseapp.com",
+  projectId: "bolao-4c08e",
+  storageBucket: "bolao-4c08e.firebasestorage.app",
+  messagingSenderId: "464776970777",
+  appId: "1:464776970777:web:cdb7cb7cc645c1ae212088",
+  measurementId: "G-R7EJ4EVQ2S"
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-let nomeAtual = ""; let jogosAtuais = [];
+
+let nomeAtual = "";
+let telefoneAtual = "";
+let jogosAtuais = [];
+
 window.iniciar = async function() {
   nomeAtual = document.getElementById("nomeJogador").value.trim();
+  telefoneAtual = document.getElementById("telefoneJogador").value.trim();
   if(!nomeAtual) return alert("Digite seu nome!");
+  if(!telefoneAtual) return alert("Digite seu WhatsApp!");
   const snap = await getDocs(collection(db, "jogos"));
   if(snap.empty) return alert("Ainda não tem jogo cadastrado. Aguarde o ADM!");
-  jogosAtuais = []; snap.forEach(d => jogosAtuais.push({id:d.id,...d.data()}));
+  jogosAtuais = [];
+  snap.forEach(d => jogosAtuais.push({id:d.id,...d.data()}));
   document.getElementById("telaInicial").style.display = "none";
-  const div = document.getElementById("telaJogos"); div.style.display = "block";
+  const div = document.getElementById("telaJogos");
+  div.style.display = "block";
   let html = "<h2 style='color:#002776'>Digite seus palpites:</h2>";
   jogosAtuais.forEach((j,i) => {
     html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3><div class="placar-inputs">
@@ -60,6 +73,7 @@ window.iniciar = async function() {
   html += `<button class="btn" onclick="finalizar()">Finalizar Palpite</button>`;
   div.innerHTML = html;
 }
+
 window.finalizar = async function() {
   const palpites = [];
   for(let i=0;i<jogosAtuais.length;i++){
@@ -69,17 +83,19 @@ window.finalizar = async function() {
     palpites.push({timeA:jogosAtuais[i].timeA,timeB:jogosAtuais[i].timeB,placarA:a,placarB:b});
   }
   const codigo = Math.random().toString(36).substring(2,8).toUpperCase();
-  await addDoc(collection(db,"palpites"),{nome:nomeAtual,codigo:codigo,palpites:palpites,data:serverTimestamp()});
+  await addDoc(collection(db,"palpites"),{nome:nomeAtual,telefone:telefoneAtual,codigo:codigo,palpites:palpites,data:serverTimestamp()});
   document.getElementById("telaJogos").style.display = "none";
-  const div = document.getElementById("telaFinal"); div.style.display = "block";
+  const div = document.getElementById("telaFinal");
+  div.style.display = "block";
   div.innerHTML = `<h2 style="color:#002776; text-align:center;">Palpite Salvo!</h2>
     <p style="text-align:center; font-size:18px;">Guarde este código:</p>
     <div class="codigo-final">${codigo}</div>
-    <button class="btn" onclick="enviarWhats('${codigo}')">Enviar no WhatsApp</button>`;
+    <button class="btn" onclick="enviarWhats('${codigo}')">Enviar meu palpite no WhatsApp</button>`;
 }
+
 window.enviarWhats = function(codigo){
-  const msg = `Meu palpite do Bolão Copa do Mundo 2026!\nCódigo: ${codigo}\nNome: ${nomeAtual}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,"_blank");
+  const msg = `Bolão Copa 2026\nMeu código: ${codigo}\nNome: ${nomeAtual}\nTelefone: ${telefoneAtual}`;
+  window.open(`https://wa.me/559181761730?text=${encodeURIComponent(msg)}`,"_blank");
 }
 </script>
 </body>

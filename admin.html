@@ -57,7 +57,7 @@ td {padding:14px; border-bottom:1px solid #eee;}
       <h2>📋 Palpites Recebidos</h2>
       <button class="btn" onclick="carregarPalpites()">Atualizar Lista</button>
       <table id="tabelaPalpites">
-        <thead><tr><th>Nome do Jogador</th><th>Código</th><th>Data/Hora</th></tr></thead>
+        <thead><tr><th>Nome</th><th>WhatsApp</th><th>Código</th><th>Data/Hora</th></tr></thead>
         <tbody></tbody>
       </table>
     </section>
@@ -72,17 +72,23 @@ window.entrar = function() {
     carregarJogos(); carregarPalpites();
   } else alert("Senha incorreta!");
 }
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-const app = initializeApp({
-  apiKey: "AIzaSyAAM7MPAOuz4Fmp2rNq64BLlEcuoXo5nyM",
-  authDomain: "bolao-copa.firebaseapp.com",
-  projectId: "bolao-copa",
-  storageBucket: "bolao-copa.firebasestorage.app",
-  messagingSenderId: "857500902607",
-  appId: "1:857500902607:web:3120a10c658f0b4cde6a75"
-});
+
+const firebaseConfig = {
+  apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
+  authDomain: "bolao-4c08e.firebaseapp.com",
+  projectId: "bolao-4c08e",
+  storageBucket: "bolao-4c08e.firebasestorage.app",
+  messagingSenderId: "464776970777",
+  appId: "1:464776970777:web:cdb7cb7cc645c1ae212088",
+  measurementId: "G-R7EJ4EVQ2S"
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 window.addJogo = async function() {
   const timeA = document.getElementById("timeA").value.trim();
   const timeB = document.getElementById("timeB").value.trim();
@@ -92,6 +98,7 @@ window.addJogo = async function() {
   document.getElementById("timeA").value = ""; document.getElementById("timeB").value = "";
   carregarJogos();
 }
+
 async function carregarJogos() {
   const snap = await getDocs(collection(db, "jogos"));
   const div = document.getElementById("jogosList");
@@ -102,9 +109,11 @@ async function carregarJogos() {
     div.innerHTML += `<p style="padding:12px; background:#f8f9fa; border-radius:8px; margin-bottom:8px;"><strong>${data.timeA}</strong> vs <strong>${data.timeB}</strong> <button class="btn btn-danger" style="float:right; padding:6px 15px;" onclick="deletarJogo('${d.id}')">Remover</button></p>`;
   });
 }
+
 window.deletarJogo = async function(id) {
   if(confirm("Remover este jogo?")) {await deleteDoc(doc(db, "jogos", id)); carregarJogos();}
 }
+
 window.gerarComprovante = async function() {
   const codigo = document.getElementById("codigoBusca").value.trim().toUpperCase();
   if(!codigo) return alert("Digite um código!");
@@ -116,7 +125,9 @@ window.gerarComprovante = async function() {
   let html = `<div class="comprovante"><h2>🏆 COMPROVANTE OFICIAL - BOLÃO COPA 2026</h2>
     <div class="codigo-big">${data.codigo}</div>
     <div style="font-size:18px; margin-bottom:10px;"><strong>Jogador:</strong> ${data.nome}</div>
+    <div style="font-size:18px; margin-bottom:10px;"><strong>WhatsApp:</strong> ${data.telefone || '-'}</div>
     <div style="font-size:16px; margin-bottom:25px;"><strong>Data do Palpite:</strong> ${dataFormatada}</div>
+    <div style="font-size:14px; text-align:center; margin-bottom:25px; color:#666;">Dúvidas? Contato ADM: +55 91 8176-1730</div>
     <h3 style="color:#002776; border-bottom:3px solid #ffdf00; padding-bottom:10px;">Seus Palpites:</h3>`;
   data.palpites.forEach(p => {
     html += `<div class="jogo-linha"><span>${p.timeA} vs ${p.timeB}</span><span style="font-size:20px;">${p.placarA} X ${p.placarB}</span></div>`;
@@ -124,18 +135,18 @@ window.gerarComprovante = async function() {
   html += `</div><button class="btn" style="margin-top:20px; width:100%;" onclick="window.print()">🖨️ Imprimir ou Salvar PDF</button>`;
   document.getElementById("comprovanteBox").innerHTML = html;
 }
+
 window.carregarPalpites = async function() {
   const q = query(collection(db, "palpites"), orderBy("data", "desc"));
   const snap = await getDocs(q);
   const tbody = document.querySelector("#tabelaPalpites tbody");
-  if(snap.empty) {tbody.innerHTML="<tr><td colspan='3' style='text-align:center; color:#999;'>Nenhum palpite recebido ainda</td></tr>"; return;}
+  if(snap.empty) {tbody.innerHTML="<tr><td colspan='4' style='text-align:center; color:#999;'>Nenhum palpite recebido ainda</td></tr>"; return;}
   tbody.innerHTML = "";
   snap.forEach(d => {
     const data = d.data();
     const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
-    tbody.innerHTML += `<tr><td>${data.nome}</td><td class="codigo">${data.codigo}</td><td>${dataFormatada}</td></tr>`;
+    tbody.innerHTML += `<tr><td>${data.nome}</td><td>${data.telefone || '-'}</td><td class="codigo">${data.codigo}</td><td>${dataFormatada}</td></tr>`;
   });
 }
 </script>
-</body>
 </html>
