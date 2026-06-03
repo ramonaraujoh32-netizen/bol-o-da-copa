@@ -107,15 +107,15 @@ window.finalizar = async function() {
   document.getElementById("telaJogos").style.display = "none";
   const div = document.getElementById("telaFinal");
   div.style.display = "block";
-  div.innerHTML = `<h2 style="color:#002776; text-align:center;">Palpite Salvo!</h2>
-    <p style="text-align:center; font-size:18px;">Guarde este código:</p>
-    <div class="codigo-final">${codigo}</div>
-    <button class="btn" onclick="enviarWhats('${codigo}')">Enviar meu palpite no WhatsApp</button>`;
+  div.innerHTML = `<div class="codigo-final">${codigo}</div>
+    <div style="text-align:center; margin:25px 0;">
+      <img src="krcode.png" style="width:200px; border:3px solid #002776; border-radius:12px;">
+    </div>`;
 }
 
 window.enviarWhats = function(codigo){
   const msg = `Bolão Copa 2026\nMeu código: ${codigo}\nNome: ${nomeAtual}\nTelefone: ${telefoneAtual}`;
-  window.open(`https://api.whatsapp.krcode.pngtext=${encodeURIComponent(msg)}`,"_blank");
+  window.open(`https://api.whatsapp.com/send?phone=559181761730&text=${encodeURIComponent(msg)}`,"_blank");
 }
 </script>
 </body>
