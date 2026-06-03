@@ -1,96 +1,103 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Bolão da Copa do Mundo 2026</title>
-<script type="importmap">
-{
-  "imports": {
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
-  }
-}
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolão Copa 2026</title>
 <style>
-body{font-family:Arial;padding:20px;max-width:600px;margin:auto;background:#f4f4f4}
-h2{text-align:center}
-input,button{width:100%;padding:12px;margin:8px 0;border-radius:5px;border:1px solid #ccc}
-button{background:#25D366;color:white;border:none;cursor:pointer;font-weight:bold}
-button.finalizar{background:#007bff}
-.jogador{background:white;padding:10px;margin:5px 0;border-radius:5px}
-.codigo{font-size:24px;text-align:center;background:#ffeb3b;padding:10px;border-radius:5px;margin:10px 0}
+:root {--verde:#009c3b; --amarelo:#ffdf00; --azul:#002776;}
+body {margin:0; font-family:Segoe UI; background:linear-gradient(135deg,var(--verde) 0%,var(--amarelo) 50%,var(--azul) 100%); min-height:100vh; padding:20px;}
+.container {max-width:700px; margin:0 auto; background:white; border-radius:25px; padding:35px; box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+h1 {text-align:center; color:var(--azul); margin:0 0 10px;}
+input#nome {width:100%; padding:14px; border:2px solid #ddd; border-radius:12px; font-size:16px; margin-bottom:25px;}
+.jogo {background:#f8f9fa; border:2px solid #e0e0e0; border-radius:12px; padding:15px; margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;}
+.jogo span {font-weight:bold; color:var(--azul);}
+.jogo input {width:50px; padding:8px; text-align:center; font-size:18px; border:2px solid #ddd; border-radius:8px;}
+.btn {width:100%; padding:18px; background:linear-gradient(135deg,var(--azul),var(--verde)); color:white; border:none; border-radius:12px; font-size:18px; font-weight:bold; cursor:pointer; margin-top:20px;}
+.modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center;}
+.modal-content {background:white; padding:40px; border-radius:20px; text-align:center; max-width:400px;}
+.modal-content h2 {color:var(--azul); margin-top:0;}
+.codigo {font-size:36px; font-weight:bold; color:#e65100; letter-spacing:4px; margin:20px 0; padding:20px; background:#fff3e0; border:3px dashed #ff9800; border-radius:12px;}
+.whats-btn {display:block; width:100%; padding:15px; background:#25D366; color:white; text-decoration:none; border-radius:12px; font-weight:bold; font-size:18px;}
 </style>
 </head>
 <body>
-<h2>Bolão da Copa do Mundo 2026</h2>
-
-<input id="nome" placeholder="Digite seu nome">
-<div id="times"></div>
-
-<button class="finalizar" onclick="salvar()">Finalizar e gerar código</button>
-
-<div id="resultado" style="display:none">
-  <div class="codigo" id="codigoGerado"></div>
-  <a id="linkZap" target="_blank"><button>Enviar código no WhatsApp</button></a>
+<div class="container">
+  <h1>🏆 Bolão Copa 2026</h1>
+  <input type="text" id="nome" placeholder="Digite seu nome completo">
+  <div id="jogos"></div>
+  <button class="btn" onclick="finalizar()">Finalizar e Gerar Código</button>
 </div>
 
-<h3>Palpites enviados:</h3>
-<div id="lista"></div>
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h2>Pronto!</h2>
+    <p>Teu código único:</p>
+    <div class="codigo" id="codigoBox"></div>
+    <a class="whats-btn" id="whatsLink" target="_blank">Enviar no WhatsApp</a>
+  </div>
+</div>
 
 <script type="module">
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, onSnapshot } from "firebase/firestore";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
-  authDomain: "bolao-4c08e.firebaseapp.com",
-  projectId: "bolao-4c08e",
-  storageBucket: "bolao-4c08e.firebasestorage.app",
-  messagingSenderId: "464776970777",
-  appId: "1:464776970777:web:cdb7cb7cc645c1ae212088",
-  measurementId: "G-R7EJ4EVQ2S"
+  apiKey: "AIzaSyAAM7MPAOuz4Fmp2rNq64BLlEcuoXo5nyM",
+  authDomain: "bolao-copa.firebaseapp.com",
+  projectId: "bolao-copa",
+  storageBucket: "bolao-copa.firebasestorage.app",
+  messagingSenderId: "857500902607",
+  appId: "1:857500902607:web:3120a10c658f0b4cde6a75"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const WHATSAPP = "5511999999"; // troca pelo teu número
+let jogos = [];
 
-const timesDiv = document.getElementById("times");
-onSnapshot(collection(db, "bolao_teams"), snap=>{
-  timesDiv.innerHTML = "<h4>Selecione suas seleções:</h4>";
-  snap.forEach(doc=>{
-    const t = doc.data();
-    timesDiv.innerHTML += `<label><input type="checkbox" value="${t.name}"> ${t.name}</label><br>`;
-  });
-});
-
-function gerarCodigo(){
-  return Math.random().toString(36).substring(2,8).toUpperCase();
-}
-
-async function salvar(){
-  const nome = document.getElementById("nome").value.trim();
-  const escolhidos = [...document.querySelectorAll("#times input:checked")].map(i=>i.value);
-  if(!nome || escolhidos.length==0){alert("Preencha o nome e selecione pelo menos 1 seleção");return;}
-  
-  const codigo = gerarCodigo();
-  await addDoc(collection(db,"jogadores"),{nome,times:escolhidos,codigo,data:new Date()});
-  
-  document.getElementById("codigoGerado").innerText = "Seu código: " + codigo;
-  document.getElementById("linkZap").href = `https://wa.me/${WHATSAPP}?text=Meu código do bolão: ${codigo}`;
-  document.getElementById("resultado").style.display = "block";
-  document.getElementById("nome").value="";
-  document.querySelectorAll("#times input").forEach(i=>i.checked=false);
-}
-
-onSnapshot(collection(db,"jogadores"), snap=>{
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
-  snap.forEach(doc=>{
+async function carregarJogos() {
+  const snap = await getDocs(collection(db, "jogos"));
+  const div = document.getElementById("jogos");
+  jogos = [];
+  snap.forEach(doc => {
     const d = doc.data();
-    lista.innerHTML += `<div class="jogador"><b>${d.nome}</b> - Código: ${d.codigo}<br>Seleções: ${d.times.join(", ")}</div>`;
+    jogos.push({id: doc.id, timeA: d.timeA, timeB: d.timeB});
+    div.innerHTML += `
+      <div class="jogo">
+        <span>${d.timeA}</span>
+        <input type="number" min="0" id="placarA_${doc.id}" placeholder="0">
+        <span>X</span>
+        <input type="number" min="0" id="placarB_${doc.id}" placeholder="0">
+        <span>${d.timeB}</span>
+      </div>`;
   });
-});
+}
+carregarJogos();
+
+window.finalizar = async function() {
+  const nome = document.getElementById("nome").value.trim();
+  if (!nome) return alert("Digite teu nome!");
+  
+  const palpites = [];
+  for (let j of jogos) {
+    const a = document.getElementById(`placarA_${j.id}`).value;
+    const b = document.getElementById(`placarB_${j.id}`).value;
+    if (a === "" || b === "") return alert("Preencha todos os placares!");
+    palpites.push({jogoId: j.id, timeA: j.timeA, timeB: j.timeB, placarA: a, placarB: b});
+  }
+  
+  const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  await addDoc(collection(db, "palpites"), {
+    nome, codigo, palpites, data: serverTimestamp()
+  });
+  
+  document.getElementById("codigoBox").innerText = codigo;
+  document.getElementById("modal").style.display = "flex";
+  
+  const msg = encodeURIComponent(`Meu código do Bolão Copa 2026: ${codigo}\nNome: ${nome}`);
+  document.getElementById("whatsLink").href = `https://wa.me/55SEUNUMEROAQUI?text=${msg}`;
+}
 </script>
 </body>
 </html>
