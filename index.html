@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Bolão da Copa do Mundo 2026</title>
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+  }
+}
+</script>
+<style>
+body{font-family:Arial;padding:20px;max-width:600px;margin:auto;background:#f4f4f4}
+h2{text-align:center}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:5px;border:1px solid #ccc}
+button{background:#25D366;color:white;border:none;cursor:pointer;font-weight:bold}
+button.finalizar{background:#007bff}
+.jogador{background:white;padding:10px;margin:5px 0;border-radius:5px}
+.codigo{font-size:24px;text-align:center;background:#ffeb3b;padding:10px;border-radius:5px;margin:10px 0}
+</style>
+</head>
+<body>
+<h2>Bolão da Copa do Mundo 2026</h2>
+
+<input id="nome" placeholder="Digite seu nome">
+<div id="times"></div>
+
+<button class="finalizar" onclick="salvar()">Finalizar e gerar código</button>
+
+<div id="resultado" style="display:none">
+  <div class="codigo" id="codigoGerado"></div>
+  <a id="linkZap" target="_blank"><button>Enviar código no WhatsApp</button></a>
+</div>
+
+<h3>Palpites enviados:</h3>
+<div id="lista"></div>
+
+<script type="module">
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, onSnapshot } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
+  authDomain: "bolao-4c08e.firebaseapp.com",
+  projectId: "bolao-4c08e",
+  storageBucket: "bolao-4c08e.firebasestorage.app",
+  messagingSenderId: "464776970777",
+  appId: "1:464776970777:web:cdb7cb7cc645c1ae212088",
+  measurementId: "G-R7EJ4EVQ2S"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const WHATSAPP = "5511999999"; // troca pelo teu número
+
+const timesDiv = document.getElementById("times");
+onSnapshot(collection(db, "bolao_teams"), snap=>{
+  timesDiv.innerHTML = "<h4>Selecione suas seleções:</h4>";
+  snap.forEach(doc=>{
+    const t = doc.data();
+    timesDiv.innerHTML += `<label><input type="checkbox" value="${t.name}"> ${t.name}</label><br>`;
+  });
+});
+
+function gerarCodigo(){
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+async function salvar(){
+  const nome = document.getElementById("nome").value.trim();
+  const escolhidos = [...document.querySelectorAll("#times input:checked")].map(i=>i.value);
+  if(!nome || escolhidos.length==0){alert("Preencha o nome e selecione pelo menos 1 seleção");return;}
+  
+  const codigo = gerarCodigo();
+  await addDoc(collection(db,"jogadores"),{nome,times:escolhidos,codigo,data:new Date()});
+  
+  document.getElementById("codigoGerado").innerText = "Seu código: " + codigo;
+  document.getElementById("linkZap").href = `https://wa.me/${WHATSAPP}?text=Meu código do bolão: ${codigo}`;
+  document.getElementById("resultado").style.display = "block";
+  document.getElementById("nome").value="";
+  document.querySelectorAll("#times input").forEach(i=>i.checked=false);
+}
+
+onSnapshot(collection(db,"jogadores"), snap=>{
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+  snap.forEach(doc=>{
+    const d = doc.data();
+    lista.innerHTML += `<div class="jogador"><b>${d.nome}</b> - Código: ${d.codigo}<br>Seleções: ${d.times.join(", ")}</div>`;
+  });
+});
+</script>
+</body>
+</html>
