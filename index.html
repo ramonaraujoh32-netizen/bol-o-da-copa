@@ -78,8 +78,8 @@ window.finalizar = async function() {
     <button class="btn" onclick="enviarWhats('${codigo}')">Enviar no WhatsApp</button>`;
 }
 window.enviarWhats = function(codigo){
-  const msg = `Meu palpite do Bolão Copa do Mundo 2026!%0ACódigo: ${codigo}%0ANome: ${nomeAtual}`;
-  window.open(`https://wa.me/559181761730?text=${msg}`,"_blank");
+  const msg = `Meu palpite do Bolão Copa do Mundo 2026!\nCódigo: ${codigo}\nNome: ${nomeAtual}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,"_blank");
 }
 </script>
 </body>
