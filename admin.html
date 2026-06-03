@@ -24,6 +24,7 @@ input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; marg
 table {width:100%; border-collapse:collapse; margin-top:20px;}
 th {background:var(--azul); color:white; padding:15px; text-align:left;}
 td {padding:14px; border-bottom:1px solid #eee;}
+.ganhador-card {background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%); border-left:6px solid var(--verde); padding:15px; margin-bottom:12px; border-radius:10px;}
 </style>
 </head>
 <body>
@@ -33,11 +34,12 @@ td {padding:14px; border-bottom:1px solid #eee;}
   <input type="password" id="senha" placeholder="Digite a senha">
   <button onclick="entrar()">Entrar no Painel</button>
 </div>
+
 <div id="conteudo">
   <div class="container">
     <h1>🇧🇷 BOLÃO DA COPA DO MUNDO 2026 🇧🇷</h1>
     <p class="subtitle">Painel de Administração</p>
-    
+
     <section style="background:#fff3e0; border:3px solid #ff9800; border-radius:15px; padding:25px;">
       <h2 style="color:#e65100; margin-top:0;">🔥 Finalizar Rodada</h2>
       <p style="color:#666; margin-bottom:20px;">Atenção: Isso vai apagar TODOS os jogos da tela do jogador e limpar TODOS os palpites. Use quando a rodada acabar.</p>
@@ -51,12 +53,28 @@ td {padding:14px; border-bottom:1px solid #eee;}
       <button class="btn" onclick="addJogo()">Enviar Jogo</button>
       <div id="jogosList" style="margin-top:25px;"></div>
     </section>
+
+    <section style="background:#e8f5e9; border:3px solid var(--verde); border-radius:15px; padding:25px;">
+      <h2 style="color:var(--verde); margin-top:0;">🎯 Lançar Resultado do Jogo</h2>
+      <p style="color:#666;">Digite o placar final. O sistema vai mostrar parabéns na tela de quem acertou:</p>
+      <input type="text" id="resultTimeA" placeholder="Time A - Ex: Brasil">
+      <input type="text" id="resultTimeB" placeholder="Time B - Ex: Argentina">
+      <div style="display:flex; gap:10px;">
+        <input type="number" id="resultPlacarA" placeholder="Placar A" min="0" style="width:120px;">
+        <span style="font-size:24px; font-weight:bold; align-self:center;">X</span>
+        <input type="number" id="resultPlacarB" placeholder="Placar B" min="0" style="width:120px;">
+      </div>
+      <button class="btn" onclick="lancarResultado()">Lançar Resultado</button>
+      <div id="resultadoInfo" style="margin-top:20px;"></div>
+    </section>
+
     <section>
       <h2>🎫 Gerar Comprovante do Jogador</h2>
       <input type="text" id="codigoBusca" placeholder="Cole aqui o código do jogador - Ex: X7K9P2">
       <button class="btn" onclick="gerarComprovante()">Gerar Comprovante</button>
       <div id="comprovanteBox"></div>
     </section>
+
     <section>
       <h2>📋 Palpites Recebidos</h2>
       <button class="btn" onclick="carregarPalpites()">Atualizar Lista</button>
@@ -67,6 +85,7 @@ td {padding:14px; border-bottom:1px solid #eee;}
     </section>
   </div>
 </div>
+
 <script type="module">
 const SENHA_CORRETA = "bolao2026";
 window.entrar = function() {
@@ -78,7 +97,7 @@ window.entrar = function() {
 }
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, where, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
@@ -120,27 +139,42 @@ window.deletarJogo = async function(id) {
 
 window.finalizarRodada = async function() {
   if(!confirm("TEM CERTEZA? Isso vai apagar todos os jogos e todos os palpites. Não tem como desfazer!")) return;
-  
   try {
-    // Apagar todos os jogos
     const jogosSnap = await getDocs(collection(db, "jogos"));
-    for(const d of jogosSnap.docs) {
-      await deleteDoc(doc(db, "jogos", d.id));
-    }
-    
-    // Apagar todos os palpites
+    for(const d of jogosSnap.docs) {await deleteDoc(doc(db, "jogos", d.id));}
     const palpitesSnap = await getDocs(collection(db, "palpites"));
-    for(const d of palpitesSnap.docs) {
-      await deleteDoc(doc(db, "palpites", d.id));
-    }
-    
+    for(const d of palpitesSnap.docs) {await deleteDoc(doc(db, "palpites", d.id));}
     alert("Rodada finalizada! Tela do jogador limpa e palpites apagados.");
-    carregarJogos();
-    carregarPalpites();
-    document.getElementById("comprovanteBox").innerHTML = "";
-  } catch(e) {
-    alert("Erro ao limpar: " + e.message);
+    carregarJogos(); carregarPalpites(); document.getElementById("comprovanteBox").innerHTML = "";
+  } catch(e) {alert("Erro ao limpar: " + e.message);}
+}
+
+// NOVA FUNÇÃO: Lançar resultado
+window.lancarResultado = async function() {
+  const timeA = document.getElementById("resultTimeA").value.trim();
+  const timeB = document.getElementById("resultTimeB").value.trim();
+  const placarA = document.getElementById("resultPlacarA").value;
+  const placarB = document.getElementById("resultPlacarB").value;
+
+  if(!timeA ||!timeB || placarA==="" || placarB==="") {
+    return alert("Preencha o jogo e o placar completo!");
   }
+
+  const idJogo = `${timeA.toLowerCase()}_${timeB.toLowerCase()}`;
+  await setDoc(doc(db, "resultados", idJogo), {
+    timeA, timeB, placarA, placarB, data: serverTimestamp()
+  });
+
+  document.getElementById("resultadoInfo").innerHTML = `
+    <div style="background:#c8e6c9; padding:15px; border-radius:10px; border-left:5px solid var(--verde);">
+      ✅ Resultado lançado: <strong>${timeA} ${placarA} x ${placarB} ${timeB}</strong><br>
+      Quem acertou vai ver o parabéns quando entrar no site.
+    </div>
+  `;
+  document.getElementById("resultTimeA").value = "";
+  document.getElementById("resultTimeB").value = "";
+  document.getElementById("resultPlacarA").value = "";
+  document.getElementById("resultPlacarB").value = "";
 }
 
 window.gerarComprovante = async function() {
@@ -151,7 +185,7 @@ window.gerarComprovante = async function() {
   if(snap.empty) return alert("Código não encontrado!");
   const data = snap.docs[0].data();
   const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
-  
+
   let html = `
   <div style="max-width:700px; margin:30px auto; background:white; border:4px solid #002776; border-radius:20px; padding:40px; box-shadow:0 8px 30px rgba(0,39,118,0.15);">
     <div style="text-align:center; border-bottom:4px solid #ffdf00; padding-bottom:25px; margin-bottom:30px;">

@@ -36,23 +36,36 @@ input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; marg
 .placar-inputs {display:flex; gap:10px; align-items:center;}
 .placar-inputs input {width:70px; text-align:center; font-size:20px; font-weight:bold;}
 .codigo-final {font-size:32px; font-weight:bold; color:#e65100; background:#ffdf00; padding:20px; border-radius:12px; text-align:center; margin:25px 0; border:3px solid #002776;}
+.parabens-box {
+  background:linear-gradient(135deg,#ffdf00 0%,#fff9c4 100%);
+  border:4px solid #002776;
+  border-radius:20px;
+  padding:30px;
+  text-align:center;
+  margin-bottom:30px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+ 0%, 100% {transform:scale(1);}
+ 50% {transform:scale(1.03);}
+}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🇧🇷 BOLÃO DA COPA DO MUNDO 2026 🇧🇷</h1>
-  <p class="subtitle">Faça seu palpite e concorra!</p>
+  <p class="subtitle">Faça login com seu WhatsApp</p>
   <div id="telaInicial">
     <input type="text" id="nomeJogador" placeholder="Digite seu nome completo">
     <input type="tel" id="telefoneJogador" placeholder="Digite seu WhatsApp - Ex: 11999999">
-    <button class="btn" onclick="iniciar()">Começar Palpite</button>
+    <button class="btn" onclick="login()">Entrar</button>
   </div>
   <div id="telaJogos" style="display:none;"></div>
   <div id="telaFinal" style="display:none;"></div>
 </div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, setDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
@@ -69,32 +82,97 @@ const db = getFirestore(app);
 
 let nomeAtual = "";
 let telefoneAtual = "";
-let jogosAtuais = "";
+let jogosAtuais = [];
+let codigoAtual = "";
 
-window.iniciar = async function() {
+window.login = async function() {
   nomeAtual = document.getElementById("nomeJogador").value.trim();
   telefoneAtual = document.getElementById("telefoneJogador").value.trim();
   if(!nomeAtual) return alert("Digite seu nome!");
   if(!telefoneAtual) return alert("Digite seu WhatsApp!");
-  const snap = await getDocs(collection(db, "jogos"));
-  if(snap.empty) return alert("Ainda não tem jogo cadastrado. Aguarde o ADM!");
+
+  const snapJogos = await getDocs(collection(db, "jogos"));
+  if(snapJogos.empty) return alert("Ainda não tem jogo cadastrado. Aguarde o ADM!");
+
   jogosAtuais = [];
-  snap.forEach(d => jogosAtuais.push({id:d.id,...d.data()}));
+  snapJogos.forEach(d => jogosAtuais.push({id:d.id,...d.data()}));
+
+  const docRef = doc(db, "palpites", telefoneAtual);
+  const docSnap = await getDoc(docRef);
+
+  if(docSnap.exists()) {
+    const dadosSalvos = docSnap.data();
+    if(dadosSalvos.nome.toLowerCase()!== nomeAtual.toLowerCase()) {
+      return alert(`Esse WhatsApp já pertence ao usuário: ${dadosSalvos.nome}\nUse o nome correto para entrar.`);
+    }
+    codigoAtual = dadosSalvos.codigo;
+    alert(`Bem vindo de volta, ${nomeAtual}!`);
+  } else {
+    codigoAtual = Math.random().toString(36).substring(2,8).toUpperCase();
+  }
+
+  abrirTelaJogos();
+}
+
+async function abrirTelaJogos() {
   document.getElementById("telaInicial").style.display = "none";
   const div = document.getElementById("telaJogos");
   div.style.display = "block";
-  let html = "<h2 style='color:#002776'>Digite seus palpites:</h2>";
+
+  // Verifica se tem parabéns pra mostrar
+  let htmlParabens = await verificarParabens();
+
+  let html = htmlParabens + "<h2 style='color:#002776'>Digite seus palpites:</h2>";
   jogosAtuais.forEach((j,i) => {
     html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3><div class="placar-inputs">
       <input type="number" id="placarA${i}" min="0" placeholder="0">
       <span style="font-size:24px; font-weight:bold;">X</span>
       <input type="number" id="placarB${i}" min="0" placeholder="0"></div></div>`;
   });
-  html += `<button class="btn" onclick="finalizar()">Finalizar Palpite</button>`;
+  html += `<button class="btn" onclick="salvar()">Salvar Palpite</button>`;
   div.innerHTML = html;
 }
 
-window.finalizar = async function() {
+async function verificarParabens() {
+  const docRef = doc(db, "palpites", telefoneAtual);
+  const docSnap = await getDoc(docRef);
+  if(!docSnap.exists()) return "";
+
+  const meusPalpites = docSnap.data().palpites || [];
+  const resultadosSnap = await getDocs(collection(db, "resultados"));
+  
+  const jogosAcertados = [];
+  resultadosSnap.forEach(d => {
+    const resultado = d.data();
+    const palpite = meusPalpites.find(p =>
+      p.timeA.toLowerCase() === resultado.timeA.toLowerCase() &&
+      p.timeB.toLowerCase() === resultado.timeB.toLowerCase() &&
+      p.placarA === resultado.placarA &&
+      p.placarB === resultado.placarB
+    );
+    if(palpite) {
+      jogosAcertados.push(`${resultado.timeA} ${resultado.placarA} x ${resultado.placarB} ${resultado.timeB}`);
+    }
+  });
+
+  if(jogosAcertados.length === 0) return "";
+
+  return `
+    <div class="parabens-box">
+      <div style="font-size:60px; margin-bottom:15px;">🎉</div>
+      <h2 style="color:#e65100; margin:0 0 15px 0;">PARABÉNS, ${nomeAtual.toUpperCase()}!</h2>
+      <p style="font-size:18px; color:#002776; margin:0 0 20px 0;">
+        Você acertou o placar de:
+      </p>
+      ${jogosAcertados.map(j => `<div style="background:white; padding:12px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:18px; color:#002776;">${j}</div>`).join('')}
+      <div style="margin-top:25px;">
+        <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" style="max-width:250px; border-radius:15px;">
+      </div>
+    </div>
+  `;
+}
+
+window.salvar = async function() {
   const palpites = [];
   for(let i=0;i<jogosAtuais.length;i++){
     const a = document.getElementById(`placarA${i}`).value;
@@ -102,15 +180,22 @@ window.finalizar = async function() {
     if(a===""||b==="") return alert("Preencha todos os placares!");
     palpites.push({timeA:jogosAtuais[i].timeA,timeB:jogosAtuais[i].timeB,placarA:a,placarB:b});
   }
-  const codigo = Math.random().toString(36).substring(2,8).toUpperCase();
-  await addDoc(collection(db,"palpites"),{nome:nomeAtual,telefone:telefoneAtual,codigo:codigo,palpites:palpites,data:serverTimestamp()});
+
+  await setDoc(doc(db, "palpites", telefoneAtual), {
+    nome: nomeAtual,
+    telefone: telefoneAtual,
+    codigo: codigoAtual,
+    palpites: palpites,
+    data: serverTimestamp()
+  });
+
   document.getElementById("telaJogos").style.display = "none";
   const div = document.getElementById("telaFinal");
   div.style.display = "block";
-  div.innerHTML = `<div class="codigo-final">${codigo}</div>
-    <button class="btn" onclick="mostrarQR('${codigo}')">Entrar no WhatsApp e ver QR Code</button>
+  div.innerHTML = `<div class="codigo-final">${codigoAtual}</div>
+    <button class="btn" onclick="mostrarQR('${codigoAtual}')">Entrar no WhatsApp e ver QR Code</button>
     <div id="qrcodeBox" style="display:none; text-align:center; margin:25px 0;">
-      <img src="krcode.png" style="width:200px; border:3px solid #002776; border-radius:12px; margin-bottom:15px;">
+      <img src= style="width:200px; border:3px solid #002776; border-radius:12px; margin-bottom:15px;">
     </div>`;
 }
 
