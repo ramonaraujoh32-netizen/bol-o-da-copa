@@ -119,7 +119,6 @@ async function abrirTelaJogos() {
   const div = document.getElementById("telaJogos");
   div.style.display = "block";
 
-  // Verifica se tem parabéns pra mostrar
   let htmlParabens = await verificarParabens();
 
   let html = htmlParabens + "<h2 style='color:#002776'>Digite seus palpites:</h2>";
@@ -173,19 +172,42 @@ async function verificarParabens() {
 }
 
 window.salvar = async function() {
-  const palpites = [];
+  const docRef = doc(db, "palpites", telefoneAtual);
+  const docSnap = await getDoc(docRef);
+
+  let palpitesAntigos = [];
+  if(docSnap.exists()) {
+    palpitesAntigos = docSnap.data().palpites || [];
+  }
+
+  const palpitesNovos = [];
   for(let i=0;i<jogosAtuais.length;i++){
     const a = document.getElementById(`placarA${i}`).value;
     const b = document.getElementById(`placarB${i}`).value;
     if(a===""||b==="") return alert("Preencha todos os placares!");
-    palpites.push({timeA:jogosAtuais[i].timeA,timeB:jogosAtuais[i].timeB,placarA:a,placarB:b});
+
+    const timeA = jogosAtuais[i].timeA;
+    const timeB = jogosAtuais[i].timeB;
+
+    const jaApostou = palpitesAntigos.some(p =>
+      p.timeA.toLowerCase() === timeA.toLowerCase() &&
+      p.timeB.toLowerCase() === timeB.toLowerCase()
+    );
+
+    if(jaApostou) {
+      return alert(`Você já apostou em ${timeA} x ${timeB}!`);
+    }
+
+    palpitesNovos.push({timeA:timeA,timeB:timeB,placarA:a,placarB:b});
   }
+
+  const palpitesFinais = [...palpitesAntigos,...palpitesNovos];
 
   await setDoc(doc(db, "palpites", telefoneAtual), {
     nome: nomeAtual,
     telefone: telefoneAtual,
     codigo: codigoAtual,
-    palpites: palpites,
+    palpites: palpitesFinais,
     data: serverTimestamp()
   });
 
@@ -195,7 +217,7 @@ window.salvar = async function() {
   div.innerHTML = `<div class="codigo-final">${codigoAtual}</div>
     <button class="btn" onclick="mostrarQR('${codigoAtual}')">Entrar no WhatsApp e ver QR Code</button>
     <div id="qrcodeBox" style="display:none; text-align:center; margin:25px 0;">
-      <img src= style="width:200px; border:3px solid #002776; border-radius:12px; margin-bottom:15px;">
+      <img src="krcode.png" style="width:200px; border:3px solid #002776; border-radius:12px; margin-bottom:15px;">
     </div>`;
 }
 
