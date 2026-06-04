@@ -19,7 +19,7 @@ body {
 
 .players-on-top {
   position: absolute;
-  top: 375px; /* PNG desceu 375px */
+  top: 150px;
   left: 50%;
   transform: translateX(-50%);
   width: 95%;
@@ -100,6 +100,11 @@ input {
   letter-spacing:1px;
 }
 .btn:hover {background:#ffeb3b;}
+.btn:disabled {
+  background:#ccc;
+  cursor:not-allowed;
+  color:#666;
+}
 .jogo {
   background:white;
   padding:25px;
@@ -126,6 +131,59 @@ input {
   font-weight:bold;
   padding:15px;
   border:3px solid #009c3b;
+}
+.placar-inputs input:disabled {
+  background:#f0f0f0;
+  border-color:#ccc;
+  color:#999;
+}
+.minhas-apostas {
+  background: #fff9c4;
+  border: 3px solid #002776;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 15px;
+}
+.minhas-apostas h4 {
+  margin: 0 0 10px 0;
+  color: #002776;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.aposta-item {
+  background: white;
+  padding: 10px 40px 10px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #002776;
+  text-align: center;
+  position: relative;
+}
+.aposta-item.btn-apagar {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #e53935;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 24px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: bold;
+}
+.aposta-item.btn-apagar:hover {
+  background: #c62828;
+}
+.aposta-item.btn-apagar:disabled {
+  background:#ccc;
+  cursor:not-allowed;
 }
 .codigo-final {
   font-size:36px;
@@ -179,11 +237,23 @@ input {
   object-fit:cover;
   background:white;
 }
+.alerta-fechado {
+  background: #e53935;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+}
 </style>
 </head>
 <body>
 
-<div class="players-on-top">
+<div class="players-on-top" id="pngJogadores">
   <img src="jgd.png" alt="Seleção Brasil">
 </div>
 
@@ -198,7 +268,7 @@ input {
   </div>
   <div id="telaJogos" style="display:none;"></div>
   <div id="telaFinal" style="display:none;"></div>
-  
+
   <div class="jogadores">
     <div class="jogadores-title">NOSSA SELEÇÃO</div>
     <div class="jogadores-grid">
@@ -234,12 +304,23 @@ let nomeAtual = "";
 let telefoneAtual = "";
 let jogosAtuais = [];
 let codigoAtual = "";
+let palpitesAntigos = [];
+let apostasAbertas = true;
+
+async function verificarStatusApostas() {
+  const docRef = doc(db, "config", "status");
+  const docSnap = await getDoc(docRef);
+  if(!docSnap.exists()) return true;
+  return docSnap.data().apostasAbertas;
+}
 
 window.login = async function() {
   nomeAtual = document.getElementById("nomeJogador").value.trim();
   telefoneAtual = document.getElementById("telefoneJogador").value.trim();
   if(!nomeAtual) return alert("Digite seu nome!");
   if(!telefoneAtual) return alert("Digite seu WhatsApp!");
+
+  apostasAbertas = await verificarStatusApostas();
 
   const snapJogos = await getDocs(collection(db, "jogos"));
   if(snapJogos.empty) return alert("Ainda não tem jogo cadastrado. Aguarde o ADM!");
@@ -256,9 +337,11 @@ window.login = async function() {
       return alert(`Esse WhatsApp já pertence ao usuário: ${dadosSalvos.nome}\nUse o nome correto para entrar.`);
     }
     codigoAtual = dadosSalvos.codigo;
+    palpitesAntigos = dadosSalvos.palpites || [];
     alert(`Bem vindo de volta, ${nomeAtual}!`);
   } else {
     codigoAtual = Math.random().toString(36).substring(2,8).toUpperCase();
+    palpitesAntigos = [];
   }
 
   abrirTelaJogos();
@@ -266,30 +349,79 @@ window.login = async function() {
 
 async function abrirTelaJogos() {
   document.getElementById("telaInicial").style.display = "none";
+  document.getElementById("pngJogadores").style.display = "none";
   const div = document.getElementById("telaJogos");
   div.style.display = "block";
 
   let htmlParabens = await verificarParabens();
+  let html = htmlParabens;
 
-  let html = htmlParabens + "<h2 style='color:#ffdf00; font-family:Bebas Neue; font-size:32px; letter-spacing:1px; text-align:center;'>Digite seus palpites:</h2>";
+  if(!apostasAbertas) {
+    html += `<div class="alerta-fechado">🚫 APOSTAS ENCERRADAS - Você pode ver seus palpites mas não dar novos</div>`;
+  } else {
+    html += "<h2 style='color:#ffdf00; font-family:Bebas Neue; font-size:32px; letter-spacing:1px; text-align:center;'>Digite seus palpites:</h2>";
+  }
+
   jogosAtuais.forEach((j,i) => {
-    html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3><div class="placar-inputs">
-      <input type="number" id="placarA${i}" min="0" placeholder="0">
-      <span style="font-size:28px; font-weight:bold;">X</span>
-      <input type="number" id="placarB${i}" min="0" placeholder="0"></div></div>`;
+    const apostasDoJogo = palpitesAntigos.filter(p =>
+      p.timeA.toLowerCase() === j.timeA.toLowerCase() &&
+      p.timeB.toLowerCase() === j.timeB.toLowerCase()
+    );
+
+    html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3>`;
+
+    if(apostasDoJogo.length > 0) {
+      html += `<div class="minhas-apostas"><h4>Minhas Apostas:</h4>`;
+      apostasDoJogo.forEach((ap, idxGlobal) => {
+        const idxReal = palpitesAntigos.indexOf(ap);
+        html += `<div class="aposta-item">${ap.placarA} X ${ap.placarB}`;
+        if(apostasAbertas) {
+          html += `<button class="btn-apagar" onclick="apagarPalpite(${idxReal})">×</button>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    if(apostasAbertas) {
+      html += `<div class="placar-inputs" style="margin-top:15px;">
+        <input type="number" id="placarA${i}" min="0" placeholder="0">
+        <span style="font-size:28px; font-weight:bold;">X</span>
+        <input type="number" id="placarB${i}" min="0" placeholder="0"></div></div>`;
+    } else {
+      html += `</div>`;
+    }
   });
-  html += `<button class="btn" onclick="salvar()">Salvar Palpite</button>`;
+
+  if(apostasAbertas) {
+    html += `<button class="btn" onclick="salvar()">Salvar Palpite</button>`;
+  } else {
+    html += `<button class="btn" disabled>APOSTAS ENCERRADAS</button>`;
+  }
+
   div.innerHTML = html;
+}
+
+window.apagarPalpite = async function(idx) {
+  if(!apostasAbertas) return alert("Não pode apagar palpite com apostas encerradas!");
+  if(!confirm("Apagar esse palpite?")) return;
+  palpitesAntigos.splice(idx, 1);
+  await setDoc(doc(db, "palpites", telefoneAtual), {
+    nome: nomeAtual,
+    telefone: telefoneAtual,
+    codigo: codigoAtual,
+    palpites: palpitesAntigos,
+    data: serverTimestamp()
+  });
+  abrirTelaJogos();
 }
 
 async function verificarParabens() {
   const docRef = doc(db, "palpites", telefoneAtual);
   const docSnap = await getDoc(docRef);
   if(!docSnap.exists()) return "";
-
   const meusPalpites = docSnap.data().palpites || [];
   const resultadosSnap = await getDocs(collection(db, "resultados"));
-  
   const jogosAcertados = [];
   resultadosSnap.forEach(d => {
     const resultado = d.data();
@@ -303,56 +435,29 @@ async function verificarParabens() {
       jogosAcertados.push(`${resultado.timeA} ${resultado.placarA} x ${resultado.placarB} ${resultado.timeB}`);
     }
   });
-
   if(jogosAcertados.length === 0) return "";
-
-  return `
-    <div class="parabens-box">
-      <div style="font-size:70px; margin-bottom:15px;">🎉</div>
-      <h2 style="color:#e65100; margin:0 0 15px 0; font-family:Bebas Neue; font-size:38px; letter-spacing:2px;">PARABÉNS, ${nomeAtual.toUpperCase()}!</h2>
-      <p style="font-size:20px; color:#002776; margin:0 0 20px 0; font-weight:600;">
-        Você acertou o placar de:
-      </p>
-      ${jogosAcertados.map(j => `<div style="background:white; padding:15px; border-radius:12px; margin-bottom:12px; font-weight:bold; font-size:20px; color:#002776;">${j}</div>`).join('')}
-      <div style="margin-top:25px;">
-        <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" style="max-width:280px; border-radius:15px;">
-      </div>
-    </div>
-  `;
+  return `<div class="parabens-box"><div style="font-size:70px; margin-bottom:15px;">🎉</div><h2 style="color:#e65100; margin:0 0 15px 0; font-family:Bebas Neue; font-size:38px; letter-spacing:2px;">PARABÉNS, ${nomeAtual.toUpperCase()}!</h2><p style="font-size:20px; color:#002776; margin:0 0 20px 0; font-weight:600;">Você acertou o placar de:</p>${jogosAcertados.map(j => `<div style="background:white; padding:15px; border-radius:12px; margin-bottom:12px; font-weight:bold; font-size:20px; color:#002776;">${j}</div>`).join('')}<div style="margin-top:25px;"><img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" style="max-width:280px; border-radius:15px;"></div></div>`;
 }
 
 window.salvar = async function() {
+  if(!apostasAbertas) return alert("🚫 Apostas encerradas! Não é possível salvar novos palpites.");
+
   const docRef = doc(db, "palpites", telefoneAtual);
-  const docSnap = await getDoc(docRef);
-
-  let palpitesAntigos = [];
-  if(docSnap.exists()) {
-    palpitesAntigos = docSnap.data().palpites || [];
-  }
-
   const palpitesNovos = [];
   for(let i=0;i<jogosAtuais.length;i++){
-    const a = document.getElementById(`placarA${i}`).value;
-    const b = document.getElementById(`placarB${i}`).value;
-    if(a===""||b==="") return alert("Preencha todos os placares!");
-
-    const timeA = jogosAtuais[i].timeA;
-    const timeB = jogosAtuais[i].timeB;
-
-    const jaApostou = palpitesAntigos.some(p =>
-      p.timeA.toLowerCase() === timeA.toLowerCase() &&
-      p.timeB.toLowerCase() === timeB.toLowerCase()
-    );
-
-    if(jaApostou) {
-      return alert(`Você já apostou em ${timeA} x ${timeB}!`);
-    }
-
-    palpitesNovos.push({timeA:timeA,timeB:timeB,placarA:a,placarB:b});
+    const a = document.getElementById(`placarA${i}`)?.value;
+    const b = document.getElementById(`placarB${i}`)?.value;
+    if(!a ||!b || a===""||b==="") continue;
+    palpitesNovos.push({
+      timeA: jogosAtuais[i].timeA,
+      timeB: jogosAtuais[i].timeB,
+      placarA: a,
+      placarB: b
+    });
   }
+  if(palpitesNovos.length === 0) return alert("Preencha pelo menos um palpite!");
 
   const palpitesFinais = [...palpitesAntigos,...palpitesNovos];
-
   await setDoc(doc(db, "palpites", telefoneAtual), {
     nome: nomeAtual,
     telefone: telefoneAtual,
@@ -361,14 +466,9 @@ window.salvar = async function() {
     data: serverTimestamp()
   });
 
-  document.getElementById("telaJogos").style.display = "none";
-  const div = document.getElementById("telaFinal");
-  div.style.display = "block";
-  div.innerHTML = `<div class="codigo-final">${codigoAtual}</div>
-    <button class="btn" onclick="mostrarQR('${codigoAtual}')">Entrar no WhatsApp e ver QR Code</button>
-    <div id="qrcodeBox" style="display:none; text-align:center; margin:25px 0;">
-      <img src="krcode.png" style="width:200px; border:3px solid #002776; border-radius:12px; margin-bottom:15px;">
-    </div>`;
+  palpitesAntigos = palpitesFinais;
+  alert("Palpite salvo!");
+  abrirTelaJogos();
 }
 
 window.mostrarQR = function(codigo) {

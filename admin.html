@@ -5,74 +5,13 @@
 <title>Bolão da Copa do Mundo 2026 - ADM</title>
 <style>
 :root {--verde:#009c3b; --amarelo:#ffdf00; --azul:#002776;}
-
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, var(--verde) 0%, var(--amarelo) 50%, var(--azul) 100%);
-  background-attachment: fixed;
-}
-
-#loginBox {
-  width: 98%;
-  max-width: 600px;
-  background: linear-gradient(180deg, var(--verde) 0%, #007a2f 100%);
-  padding: 70px 40px;
-  border-radius: 25px;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-  text-align: center;
-  border: 5px solid var(--amarelo);
-  box-sizing: border-box;
-}
-
-#loginBox h2 {
-  color: var(--amarelo);
-  font-size: 38px;
-  margin-bottom: 20px;
-  text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
-}
-
-#loginBox p {
-  color: white;
-  font-size: 20px;
-  margin-bottom: 40px;
-  font-weight: 500;
-}
-
-#loginBox input {
-  width: 100%;
-  padding: 25px;
-  border: 4px solid var(--amarelo);
-  border-radius: 15px;
-  font-size: 22px;
-  margin: 40px 0;
-  box-sizing: border-box;
-  background: white;
-  font-weight: bold;
-}
-
-#loginBox button {
-  width: 100%;
-  padding: 25px;
-  background: var(--amarelo);
-  color: var(--azul);
-  border: none;
-  border-radius: 15px;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-#loginBox button:hover {
-  background: #ffeb3b;
-}
-
+body {margin: 0; padding: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, var(--verde) 0%, var(--amarelo) 50%, var(--azul) 100%); background-attachment: fixed;}
+#loginBox {width: 98%; max-width: 600px; background: linear-gradient(180deg, var(--verde) 0%, #007a2f 100%); padding: 70px 40px; border-radius: 25px; box-shadow: 0 15px 50px rgba(0,0,0,0.5); text-align: center; border: 5px solid var(--amarelo); box-sizing: border-box;}
+#loginBox h2 {color: var(--amarelo); font-size: 38px; margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.4);}
+#loginBox p {color: white; font-size: 20px; margin-bottom: 40px; font-weight: 500;}
+#loginBox input {width: 100%; padding: 25px; border: 4px solid var(--amarelo); border-radius: 15px; font-size: 22px; margin: 40px 0; box-sizing: border-box; background: white; font-weight: bold;}
+#loginBox button {width: 100%; padding: 25px; background: var(--amarelo); color: var(--azul); border: none; border-radius: 15px; font-size: 24px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;}
+#loginBox button:hover {background: #ffeb3b;}
 #conteudo {display:none;}
 .container {max-width:1100px; margin:0 auto; background:white; border-radius:20px; padding:40px; box-shadow:0 5px 25px rgba(0,0,0,0.1); border-top:10px solid var(--amarelo);}
 h1 {color:var(--azul); text-align:center; font-size:36px; margin-bottom:5px;}
@@ -104,6 +43,13 @@ td {padding:14px; border-bottom:1px solid #eee;}
   <div class="container">
     <h1>🇧🇷 BOLÃO DA COPA DO MUNDO 2026 🇧🇷</h1>
     <p class="subtitle">Painel de Administração</p>
+
+    <section style="background:#ffe0e0; border:3px solid #d32f2f; border-radius:15px; padding:25px;">
+      <h2 style="color:#d32f2f; margin-top:0;">🔒 Controle de Apostas</h2>
+      <div id="statusApostas" style="font-size:22px; font-weight:bold; padding:15px; border-radius:10px; margin-bottom:20px; text-align:center;">Carregando...</div>
+      <button class="btn" style="background:#4caf50; width:48%; margin-right:2%;" onclick="abrirApostas()">ABRIR APOSTAS</button>
+      <button class="btn btn-danger" style="width:48%;" onclick="fecharApostas()">ENCERRAR APOSTAS</button>
+    </section>
 
     <section style="background:#fff3e0; border:3px solid #ff9800; border-radius:15px; padding:25px;">
       <h2 style="color:#e65100; margin-top:0;">🔥 Finalizar Rodada</h2>
@@ -157,12 +103,12 @@ window.entrar = function() {
   if(document.getElementById("senha").value === SENHA_CORRETA) {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("conteudo").style.display = "block";
-    carregarJogos(); carregarPalpites();
+    carregarJogos(); carregarPalpites(); atualizarStatusApostas();
   } else alert("Senha incorreta!");
 }
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, where, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, orderBy, query, where, serverTimestamp, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyASU0imFDT7qJ7AqRLAzEAYHILQN1w9UK0",
@@ -219,55 +165,24 @@ window.lancarResultado = async function() {
   const timeB = document.getElementById("resultTimeB").value.trim();
   const placarA = document.getElementById("resultPlacarA").value;
   const placarB = document.getElementById("resultPlacarB").value;
-
-  if(!timeA ||!timeB || placarA==="" || placarB==="") {
-    return alert("Preencha o jogo e o placar completo!");
-  }
-
+  if(!timeA ||!timeB || placarA==="" || placarB==="") return alert("Preencha o jogo e o placar completo!");
   const idJogo = `${timeA.toLowerCase()}_${timeB.toLowerCase()}`;
-  await setDoc(doc(db, "resultados", idJogo), {
-    timeA, timeB, placarA, placarB, data: serverTimestamp()
-  });
-
+  await setDoc(doc(db, "resultados", idJogo), {timeA, timeB, placarA, placarB, data: serverTimestamp()});
   const snap = await getDocs(collection(db, "palpites"));
   const ganhadores = [];
-
   snap.forEach(d => {
     const data = d.data();
-    const palpite = data.palpites.find(p =>
-      p.timeA.toLowerCase() === timeA.toLowerCase() &&
-      p.timeB.toLowerCase() === timeB.toLowerCase() &&
-      String(p.placarA) === String(placarA) &&
-      String(p.placarB) === String(placarB)
-    );
-    if(palpite) {
-      ganhadores.push(`${data.nome} - ${palpite.placarA} x ${palpite.placarB}`);
-    }
+    const palpite = data.palpites.find(p => p.timeA.toLowerCase() === timeA.toLowerCase() && p.timeB.toLowerCase() === timeB.toLowerCase() && String(p.placarA) === String(placarA) && String(p.placarB) === String(placarB));
+    if(palpite) ganhadores.push(`${data.nome} - ${palpite.placarA} x ${palpite.placarB}`);
   });
-
-  let html = `
-    <div style="background:#c8e6c9; padding:15px; border-radius:10px; border-left:5px solid var(--verde); margin-bottom:15px;">
-      ✅ Resultado lançado: <strong>${timeA} ${placarA} x ${placarB} ${timeB}</strong>
-    </div>
-  `;
-
+  let html = `<div style="background:#c8e6c9; padding:15px; border-radius:10px; border-left:5px solid var(--verde); margin-bottom:15px;">✅ Resultado lançado: <strong>${timeA} ${placarA} x ${placarB} ${timeB}</strong></div>`;
   if(ganhadores.length > 0) {
-    html += `<div style="background:#fff9c4; padding:20px; border-radius:10px; border:3px solid var(--amarelo);">
-      <h3 style="color:#e65100; margin-top:0; text-align:center;">🎉 ${ganhadores.length} Ganhador${ganhadores.length>1?'es':''}</h3>
-      ${ganhadores.map(g => `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:8px; text-align:center; font-size:18px; font-weight:bold; border-left:4px solid var(--verde);">${g}</div>`).join('')}
-    </div>`;
+    html += `<div style="background:#fff9c4; padding:20px; border-radius:10px; border:3px solid var(--amarelo);"><h3 style="color:#e65100; margin-top:0; text-align:center;">🎉 ${ganhadores.length} Ganhador${ganhadores.length>1?'es':''}</h3>${ganhadores.map(g => `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:8px; text-align:center; font-size:18px; font-weight:bold; border-left:4px solid var(--verde);">${g}</div>`).join('')}</div>`;
   } else {
-    html += `<div style="background:#ffcdd2; padding:15px; border-radius:10px; text-align:center; font-weight:bold; color:#d32f2f;">
-      Ninguém acertou
-    </div>`;
+    html += `<div style="background:#ffcdd2; padding:15px; border-radius:10px; text-align:center; font-weight:bold; color:#d32f2f;">Ninguém acertou</div>`;
   }
-
   document.getElementById("resultadoInfo").innerHTML = html;
-
-  document.getElementById("resultTimeA").value = "";
-  document.getElementById("resultTimeB").value = "";
-  document.getElementById("resultPlacarA").value = "";
-  document.getElementById("resultPlacarB").value = "";
+  document.getElementById("resultTimeA").value = ""; document.getElementById("resultPlacarA").value = ""; document.getElementById("resultTimeB").value = ""; document.getElementById("resultPlacarB").value = "";
 }
 
 window.gerarComprovante = async function() {
@@ -278,38 +193,7 @@ window.gerarComprovante = async function() {
   if(snap.empty) return alert("Código não encontrado!");
   const data = snap.docs[0].data();
   const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
-
-  let html = `
-  <div style="max-width:700px; margin:30px auto; background:white; border:4px solid #002776; border-radius:20px; padding:40px; box-shadow:0 8px 30px rgba(0,39,118,0.15);">
-    <div style="text-align:center; border-bottom:4px solid #ffdf00; padding-bottom:25px; margin-bottom:30px;">
-      <div style="font-size:40px; margin-bottom:10px;">🇧🇷</div>
-      <h1 style="color:#002776; margin:0; font-size:32px;">BOLÃO DA COPA DO MUNDO 2026</h1>
-      <p style="color:#666; margin:10px 0 0 0; font-size:14px;">COMPROVANTE OFICIAL DE PALPITE</p>
-    </div>
-    <div style="background:#ffdf00; color:#e65100; text-align:center; padding:20px; border-radius:15px; margin-bottom:30px; border:3px solid #002776;">
-      <div style="font-size:14px; font-weight:bold;">CÓDIGO DO PALPITE</div>
-      <div style="font-size:42px; font-weight:bold; letter-spacing:3px;">${data.codigo}</div>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; font-size:17px;">
-      <div><strong style="color:#002776;">Jogador:</strong><br>${data.nome}</div>
-      <div><strong style="color:#002776;">WhatsApp:</strong><br>${data.telefone || '-'}</div>
-      <div><strong style="color:#002776;">Data/Hora:</strong><br>${dataFormatada}</div>
-      <div><strong style="color:#002776;">Contato ADM:</strong><br>+55 91 8176-1730</div>
-    </div>
-    <div style="border-top:3px solid #009c3b; padding-top:25px;">
-      <h3 style="color:#002776; margin-top:0; font-size:22px;">⚽ Seus Palpites:</h3>
-      ${data.palpites.map(p => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:18px; margin-bottom:12px; border-radius:12px; border-left:6px solid #009c3b; font-size:17px; font-weight:600;">
-          <span>${p.timeA} vs ${p.timeB}</span>
-          <span style="font-size:24px; color:#002776;">${p.placarA} X ${p.placarB}</span>
-        </div>
-      `).join('')}
-    </div>
-    <div style="text-align:center; margin-top:35px; padding-top:25px; border-top:2px dashed #ccc; color:#666; font-size:13px;">
-      Guarde este comprovante. Em caso de dúvidas, entre em contato com o ADM.
-    </div>
-  </div>
-  <button class="btn" style="margin:20px auto; display:block; max-width:700px;" onclick="window.print()">🖨️ Imprimir ou Salvar PDF</button>`;
+  let html = `<div style="max-width:700px; margin:30px auto; background:white; border:4px solid #002776; border-radius:20px; padding:40px; box-shadow:0 8px 30px rgba(0,39,118,0.15);"><div style="text-align:center; border-bottom:4px solid #ffdf00; padding-bottom:25px; margin-bottom:30px;"><div style="font-size:40px; margin-bottom:10px;">🇧🇷</div><h1 style="color:#002776; margin:0; font-size:32px;">BOLÃO DA COPA DO MUNDO 2026</h1><p style="color:#666; margin:10px 0 0 0; font-size:14px;">COMPROVANTE OFICIAL DE PALPITE</p></div><div style="background:#ffdf00; color:#e65100; text-align:center; padding:20px; border-radius:15px; margin-bottom:30px; border:3px solid #002776;"><div style="font-size:14px; font-weight:bold;">CÓDIGO DO PALPITE</div><div style="font-size:42px; font-weight:bold; letter-spacing:3px;">${data.codigo}</div></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; font-size:17px;"><div><strong style="color:#002776;">Jogador:</strong><br>${data.nome}</div><div><strong style="color:#002776;">WhatsApp:</strong><br>${data.telefone || '-'}</div><div><strong style="color:#002776;">Data/Hora:</strong><br>${dataFormatada}</div><div><strong style="color:#002776;">Contato ADM:</strong><br>+55 91 8176-1730</div></div><div style="border-top:3px solid #009c3b; padding-top:25px;"><h3 style="color:#002776; margin-top:0; font-size:22px;">⚽ Seus Palpites:</h3>${data.palpites.map(p => `<div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:18px; margin-bottom:12px; border-radius:12px; border-left:6px solid #009c3b; font-size:17px; font-weight:600;"><span>${p.timeA} vs ${p.timeB}</span><span style="font-size:24px; color:#002776;">${p.placarA} X ${p.placarB}</span></div>`).join('')}</div><div style="text-align:center; margin-top:35px; padding-top:25px; border-top:2px dashed #ccc; color:#666; font-size:13px;">Guarde este comprovante. Em caso de dúvidas, entre em contato com o ADM.</div></div><button class="btn" style="margin:20px auto; display:block; max-width:700px;" onclick="window.print()">🖨️ Imprimir ou Salvar PDF</button>`;
   document.getElementById("comprovanteBox").innerHTML = html;
 }
 
@@ -324,6 +208,43 @@ window.carregarPalpites = async function() {
     const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
     tbody.innerHTML += `<tr><td>${data.nome}</td><td>${data.telefone || '-'}</td><td class="codigo">${data.codigo}</td><td>${dataFormatada}</td></tr>`;
   });
+}
+
+// Controle de apostas - cria sozinho se não existir
+async function atualizarStatusApostas() {
+  const docRef = doc(db, "config", "status");
+  const docSnap = await getDoc(docRef);
+  const statusBox = document.getElementById("statusApostas");
+  if(!docSnap.exists()) {
+    await setDoc(docRef, {apostasAbertas: true});
+    statusBox.style.background = "#c8e6c9";
+    statusBox.style.color = "#2e7d32";
+    statusBox.innerHTML = "✅ APOSTAS ABERTAS - Jogadores podem apostar";
+    return;
+  }
+  if(docSnap.data().apostasAbertas) {
+    statusBox.style.background = "#c8e6c9";
+    statusBox.style.color = "#2e7d32";
+    statusBox.innerHTML = "✅ APOSTAS ABERTAS - Jogadores podem apostar";
+  } else {
+    statusBox.style.background = "#ffcdd2";
+    statusBox.style.color = "#c62828";
+    statusBox.innerHTML = "🚫 APOSTAS ENCERRADAS - Jogadores bloqueados";
+  }
+}
+
+window.abrirApostas = async function() {
+  await setDoc(doc(db, "config", "status"), {apostasAbertas: true});
+  alert("Apostas ABERTAS!");
+  atualizarStatusApostas();
+}
+
+window.fecharApostas = async function() {
+  if(confirm("TEM CERTEZA? Isso vai bloquear todos os jogadores de apostar.")) {
+    await setDoc(doc(db, "config", "status"), {apostasAbertas: false});
+    alert("Apostas ENCERRADAS!");
+    atualizarStatusApostas();
+  }
 }
 </script>
 </html>
