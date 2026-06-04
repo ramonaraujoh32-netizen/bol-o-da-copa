@@ -19,7 +19,7 @@ body {
 
 .players-on-top {
   position: absolute;
-  top: 150px;
+  top: 375px; /* Desceu 375px */
   left: 50%;
   transform: translateX(-50%);
   width: 95%;
@@ -180,10 +180,6 @@ input {
 }
 .aposta-item.btn-apagar:hover {
   background: #c62828;
-}
-.aposta-item.btn-apagar:disabled {
-  background:#ccc;
-  cursor:not-allowed;
 }
 .codigo-final {
   font-size:36px;
@@ -349,7 +345,7 @@ window.login = async function() {
 
 async function abrirTelaJogos() {
   document.getElementById("telaInicial").style.display = "none";
-  document.getElementById("pngJogadores").style.display = "none";
+  document.getElementById("pngJogadores").style.display = "none"; /* PNG some ao entrar */
   const div = document.getElementById("telaJogos");
   div.style.display = "block";
 
