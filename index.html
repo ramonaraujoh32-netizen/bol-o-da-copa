@@ -3,46 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <title>Bolão da Copa do Mundo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 body {
   margin:0;
-  font-family:'Segoe UI',sans-serif;
+  font-family:'Poppins', sans-serif;
   background:
-    linear-gradient(rgba(232,245,233,0.88), rgba(255,253,231,0.88)),
-    url('https://i.imgur.com/YzX9pLr.png') center no-repeat;
+    linear-gradient(rgba(0,156,59,0.85), rgba(255,223,0,0.85), rgba(0,39,118,0.85)),
+    url('https://i.imgur.com/8QzY9kR.png') center bottom no-repeat;
   background-size: cover;
   background-attachment: fixed;
   padding:20px;
   min-height: 100vh;
 }
 .container {
-  max-width:600px;
-  margin:50px auto;
+  max-width:650px;
+  min-height: 90vh;
+  margin:30px auto;
   background:white;
-  border-radius:20px;
-  padding:40px;
-  box-shadow:0 8px 30px rgba(0,0,0,0.15);
-  border-top:10px solid #ffdf00;
+  border-radius:25px;
+  padding:50px 40px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  border-top:12px solid #ffdf00;
+  border-bottom:12px solid #002776;
   position: relative;
   z-index: 1;
 }
-h1 {color:#002776; text-align:center; font-size:30px; margin-bottom:10px;}
-.subtitle {text-align:center; color:#666; font-size:14px; margin-bottom:30px;}
-input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; margin-bottom:15px; box-sizing:border-box; font-size:15px; background:#fff;}
-.btn {width:100%; padding:16px; background:#009c3b; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold; font-size:18px; margin-top:20px;}
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  color:#002776;
+  text-align:center;
+  font-size:48px;
+  margin-bottom:15px;
+  letter-spacing:2px;
+  text-shadow:3px 3px 0px #ffdf00;
+  line-height:1.1;
+}
+.subtitle {
+  text-align:center;
+  color:#666;
+  font-size:16px;
+  margin-bottom:40px;
+  font-weight:600;
+}
+input {
+  width:100%;
+  padding:18px;
+  border:3px solid #ddd;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-sizing:border-box;
+  font-size:17px;
+  background:#fff;
+  font-family:'Poppins', sans-serif;
+}
+.btn {
+  width:100%;
+  padding:20px;
+  background:#009c3b;
+  color:white;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:bold;
+  font-size:20px;
+  margin-top:25px;
+  font-family:'Poppins', sans-serif;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
 .btn:hover {background:#007a2e;}
-.jogo {background:#f8f9fa; padding:20px; border-radius:12px; margin-bottom:15px; border-left:5px solid #009c3b;}
-.jogo h3 {margin:0 0 15px 0; color:#002776;}
-.placar-inputs {display:flex; gap:10px; align-items:center;}
-.placar-inputs input {width:70px; text-align:center; font-size:20px; font-weight:bold;}
-.codigo-final {font-size:32px; font-weight:bold; color:#e65100; background:#ffdf00; padding:20px; border-radius:12px; text-align:center; margin:25px 0; border:3px solid #002776;}
+.jogo {
+  background:#f8f9fa;
+  padding:25px;
+  border-radius:15px;
+  margin-bottom:20px;
+  border-left:6px solid #009c3b;
+}
+.jogo h3 {
+  margin:0 0 20px 0;
+  color:#002776;
+  font-size:20px;
+}
+.placar-inputs {
+  display:flex;
+  gap:15px;
+  align-items:center;
+}
+.placar-inputs input {
+  width:80px;
+  text-align:center;
+  font-size:24px;
+  font-weight:bold;
+  padding:15px;
+}
+.codigo-final {
+  font-size:36px;
+  font-weight:bold;
+  color:#e65100;
+  background:#ffdf00;
+  padding:25px;
+  border-radius:15px;
+  text-align:center;
+  margin:30px 0;
+  border:4px solid #002776;
+  letter-spacing:3px;
+}
 .parabens-box {
   background:linear-gradient(135deg,#ffdf00 0%,#fff9c4 100%);
   border:4px solid #002776;
-  border-radius:20px;
-  padding:30px;
+  border-radius:25px;
+  padding:35px;
   text-align:center;
-  margin-bottom:30px;
+  margin-bottom:35px;
   animation: pulse 1.5s infinite;
 }
 @keyframes pulse {
@@ -121,11 +194,11 @@ async function abrirTelaJogos() {
 
   let htmlParabens = await verificarParabens();
 
-  let html = htmlParabens + "<h2 style='color:#002776'>Digite seus palpites:</h2>";
+  let html = htmlParabens + "<h2 style='color:#002776; font-family:Bebas Neue; font-size:32px; letter-spacing:1px;'>Digite seus palpites:</h2>";
   jogosAtuais.forEach((j,i) => {
     html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3><div class="placar-inputs">
       <input type="number" id="placarA${i}" min="0" placeholder="0">
-      <span style="font-size:24px; font-weight:bold;">X</span>
+      <span style="font-size:28px; font-weight:bold;">X</span>
       <input type="number" id="placarB${i}" min="0" placeholder="0"></div></div>`;
   });
   html += `<button class="btn" onclick="salvar()">Salvar Palpite</button>`;
@@ -158,14 +231,14 @@ async function verificarParabens() {
 
   return `
     <div class="parabens-box">
-      <div style="font-size:60px; margin-bottom:15px;">🎉</div>
-      <h2 style="color:#e65100; margin:0 0 15px 0;">PARABÉNS, ${nomeAtual.toUpperCase()}!</h2>
-      <p style="font-size:18px; color:#002776; margin:0 0 20px 0;">
+      <div style="font-size:70px; margin-bottom:15px;">🎉</div>
+      <h2 style="color:#e65100; margin:0 0 15px 0; font-family:Bebas Neue; font-size:38px; letter-spacing:2px;">PARABÉNS, ${nomeAtual.toUpperCase()}!</h2>
+      <p style="font-size:20px; color:#002776; margin:0 0 20px 0; font-weight:600;">
         Você acertou o placar de:
       </p>
-      ${jogosAcertados.map(j => `<div style="background:white; padding:12px; border-radius:10px; margin-bottom:10px; font-weight:bold; font-size:18px; color:#002776;">${j}</div>`).join('')}
+      ${jogosAcertados.map(j => `<div style="background:white; padding:15px; border-radius:12px; margin-bottom:12px; font-weight:bold; font-size:20px; color:#002776;">${j}</div>`).join('')}
       <div style="margin-top:25px;">
-        <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" style="max-width:250px; border-radius:15px;">
+        <img src="https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" style="max-width:280px; border-radius:15px;">
       </div>
     </div>
   `;
