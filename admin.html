@@ -88,9 +88,10 @@ td {padding:14px; border-bottom:1px solid #eee;}
 
     <section>
       <h2>📋 Palpites Recebidos</h2>
+      <p style="color:#666; font-size:13px;">Segure 2 segundos em cima do nome pra aparecer os botões Apagar/Cancelar</p>
       <button class="btn" onclick="carregarPalpites()">Atualizar Lista</button>
       <table id="tabelaPalpites">
-        <thead><tr><th>Nome</th><th>WhatsApp</th><th>Código</th><th>Data/Hora</th></tr></thead>
+        <thead><tr><th>Nome</th><th>WhatsApp</th><th>Código</th><th>Data/Hora</th><th style="text-align:center;">Ação</th></tr></thead>
         <tbody></tbody>
       </table>
     </section>
@@ -197,20 +198,89 @@ window.gerarComprovante = async function() {
   document.getElementById("comprovanteBox").innerHTML = html;
 }
 
+// Timer pra controlar pressão longa
+let timerPressao = {};
+
 window.carregarPalpites = async function() {
   const q = query(collection(db, "palpites"), orderBy("data", "desc"));
   const snap = await getDocs(q);
   const tbody = document.querySelector("#tabelaPalpites tbody");
-  if(snap.empty) {tbody.innerHTML="<tr><td colspan='4' style='text-align:center; color:#999;'>Nenhum palpite recebido ainda</td></tr>"; return;}
+
+  if(snap.empty) {
+    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#999;'>Nenhum palpite recebido ainda</td></tr>";
+    return;
+  }
+
   tbody.innerHTML = "";
   snap.forEach(d => {
     const data = d.data();
+    const telefone = d.id;
     const dataFormatada = data.data?.toDate? new Date(data.data.toDate()).toLocaleString("pt-BR") : "-";
-    tbody.innerHTML += `<tr><td>${data.nome}</td><td>${data.telefone || '-'}</td><td class="codigo">${data.codigo}</td><td>${dataFormatada}</td></tr>`;
+    const rowId = `row_${telefone}`;
+    const btnId = `btn_${telefone}`;
+
+    tbody.innerHTML += `<tr id="${rowId}">
+      <td onmousedown="iniciarPressao('${telefone}', '${data.nome}')"
+          onmouseup="cancelarPressao('${telefone}')"
+          onmouseleave="cancelarPressao('${telefone}')"
+          ontouchstart="iniciarPressao('${telefone}', '${data.nome}')"
+          ontouchend="cancelarPressao('${telefone}')"
+          style="cursor:pointer; user-select:none;">
+        ${data.nome}
+      </td>
+      <td>${data.telefone || '-'}</td>
+      <td class="codigo">${data.codigo}</td>
+      <td>${dataFormatada}</td>
+      <td style="text-align:center;">
+        <span id="${btnId}" style="display:none;">
+          <button class="btn btn-danger" style="padding:6px 12px; font-size:13px; margin-right:5px;"
+            onclick="apagarJogador('${telefone}', '${data.nome}')">
+            Apagar
+          </button>
+          <button class="btn" style="padding:6px 12px; font-size:13px; background:#999;"
+            onclick="cancelarBotao('${telefone}')">
+            Cancelar
+          </button>
+        </span>
+      </td>
+    </tr>`;
   });
 }
 
-// Controle de apostas - cria sozinho se não existir
+window.iniciarPressao = function(telefone, nome) {
+  cancelarPressao(telefone);
+  timerPressao[telefone] = setTimeout(() => {
+    document.getElementById(`btn_${telefone}`).style.display = "inline";
+  }, 2000);
+}
+
+window.cancelarPressao = function(telefone) {
+  if(timerPressao[telefone]) {
+    clearTimeout(timerPressao[telefone]);
+    delete timerPressao[telefone];
+  }
+}
+
+window.cancelarBotao = function(telefone) {
+  document.getElementById(`btn_${telefone}`).style.display = "none";
+  cancelarPressao(telefone);
+}
+
+window.apagarJogador = async function(telefone, nome) {
+  if(!confirm(`Apagar TODOS os palpites de ${nome}?`)) {
+    document.getElementById(`btn_${telefone}`).style.display = "none";
+    return;
+  }
+  try {
+    await deleteDoc(doc(db, "palpites", telefone));
+    alert(`${nome} foi apagado!`);
+    carregarPalpites();
+  } catch(e) {
+    alert("Erro: " + e.message);
+  }
+}
+
+// Controle de apostas
 async function atualizarStatusApostas() {
   const docRef = doc(db, "config", "status");
   const docSnap = await getDoc(docRef);
