@@ -24,7 +24,6 @@ input {width:100%; padding:14px; border:3px solid #ddd; border-radius:10px; marg
 table {width:100%; border-collapse:collapse; margin-top:20px;}
 th {background:var(--azul); color:white; padding:15px; text-align:left;}
 td {padding:14px; border-bottom:1px solid #eee;}
-.ganhador-card {background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%); border-left:6px solid var(--verde); padding:15px; margin-bottom:12px; border-radius:10px;}
 </style>
 </head>
 <body>
@@ -149,7 +148,6 @@ window.finalizarRodada = async function() {
   } catch(e) {alert("Erro ao limpar: " + e.message);}
 }
 
-// NOVA FUNÇÃO: Lançar resultado
 window.lancarResultado = async function() {
   const timeA = document.getElementById("resultTimeA").value.trim();
   const timeB = document.getElementById("resultTimeB").value.trim();
@@ -165,12 +163,41 @@ window.lancarResultado = async function() {
     timeA, timeB, placarA, placarB, data: serverTimestamp()
   });
 
-  document.getElementById("resultadoInfo").innerHTML = `
-    <div style="background:#c8e6c9; padding:15px; border-radius:10px; border-left:5px solid var(--verde);">
-      ✅ Resultado lançado: <strong>${timeA} ${placarA} x ${placarB} ${timeB}</strong><br>
-      Quem acertou vai ver o parabéns quando entrar no site.
+  const snap = await getDocs(collection(db, "palpites"));
+  const ganhadores = [];
+
+  snap.forEach(d => {
+    const data = d.data();
+    const palpite = data.palpites.find(p =>
+      p.timeA.toLowerCase() === timeA.toLowerCase() &&
+      p.timeB.toLowerCase() === timeB.toLowerCase() &&
+      String(p.placarA) === String(placarA) &&
+      String(p.placarB) === String(placarB)
+    );
+    if(palpite) {
+      ganhadores.push(`${data.nome} - ${palpite.placarA} x ${palpite.placarB}`);
+    }
+  });
+
+  let html = `
+    <div style="background:#c8e6c9; padding:15px; border-radius:10px; border-left:5px solid var(--verde); margin-bottom:15px;">
+      ✅ Resultado lançado: <strong>${timeA} ${placarA} x ${placarB} ${timeB}</strong>
     </div>
   `;
+
+  if(ganhadores.length > 0) {
+    html += `<div style="background:#fff9c4; padding:20px; border-radius:10px; border:3px solid var(--amarelo);">
+      <h3 style="color:#e65100; margin-top:0; text-align:center;">🎉 ${ganhadores.length} Ganhador${ganhadores.length>1?'es':''}</h3>
+      ${ganhadores.map(g => `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:8px; text-align:center; font-size:18px; font-weight:bold; border-left:4px solid var(--verde);">${g}</div>`).join('')}
+    </div>`;
+  } else {
+    html += `<div style="background:#ffcdd2; padding:15px; border-radius:10px; text-align:center; font-weight:bold; color:#d32f2f;">
+      Ninguém acertou
+    </div>`;
+  }
+
+  document.getElementById("resultadoInfo").innerHTML = html;
+
   document.getElementById("resultTimeA").value = "";
   document.getElementById("resultTimeB").value = "";
   document.getElementById("resultPlacarA").value = "";
