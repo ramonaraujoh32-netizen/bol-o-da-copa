@@ -16,7 +16,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-
 .players-on-top {
   position: absolute;
   top: 375px;
@@ -27,13 +26,11 @@ body {
   z-index: 5;
   pointer-events: none;
 }
-
 .players-on-top img {
   width: 100%;
   height: auto;
   display: block;
 }
-
 .container {
   max-width:600px;
   width: 95%;
@@ -94,7 +91,7 @@ input {
   cursor:pointer;
   font-weight:bold;
   font-size:20px;
-  margin-top:25px;
+  margin-top:15px;
   font-family:'Poppins', sans-serif;
   text-transform:uppercase;
   letter-spacing:1px;
@@ -132,66 +129,55 @@ input {
   padding:15px;
   border:3px solid #009c3b;
 }
-.placar-inputs input:disabled {
-  background:#f0f0f0;
-  border-color:#ccc;
-  color:#999;
-}
-.minhas-apostas {
+.ultimo-salvo {
   background: #fff9c4;
-  border: 3px solid #002776;
+  border: 3px solid #009c3b;
   border-radius: 12px;
   padding: 15px;
-  margin-top: 15px;
+  margin-top: 20px;
+  display: none;
 }
-.minhas-apostas h4 {
+.ultimo-salvo h4 {
   margin: 0 0 10px 0;
   color: #002776;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
-  letter-spacing: 1px;
+  font-size: 20px;
+  text-align: center;
 }
-.aposta-item {
+.ultimo-item {
   background: white;
-  padding: 10px 40px 10px 10px;
+  padding: 12px;
   border-radius: 8px;
   margin-bottom: 8px;
   font-weight: bold;
   color: #002776;
   text-align: center;
-  position: relative;
+  border:2px solid #ffdf00;
 }
-.aposta-item.btn-apagar {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #e53935;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
-  line-height: 24px;
-  cursor: pointer;
-  padding: 0;
-  font-weight: bold;
+.seus-palpites {
+  background: #fff9c4;
+  border: 3px solid #002776;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 30px;
 }
-.aposta-item.btn-apagar:hover {
-  background: #c62828;
-}
-.codigo-final {
-  font-size:36px;
-  font-weight:bold;
-  color:#002776;
-  background:#ffdf00;
-  padding:25px;
-  border-radius:15px;
+.seus-palpites h4 {
+  margin: 0 0 15px 0;
+  color: #002776;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
   text-align:center;
-  margin:30px 0;
-  border:4px solid #002776;
-  letter-spacing:3px;
+}
+.palpite-item {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #002776;
+  text-align: center;
+  border:2px solid #009c3b;
 }
 .parabens-box {
   background:linear-gradient(135deg,#ffdf00 0%,#fff9c4 100%);
@@ -359,28 +345,10 @@ async function abrirTelaJogos() {
   }
 
   jogosAtuais.forEach((j,i) => {
-    const apostasDoJogo = palpitesAntigos.filter(p =>
-      p.timeA.toLowerCase() === j.timeA.toLowerCase() &&
-      p.timeB.toLowerCase() === j.timeB.toLowerCase()
-    );
-
     html += `<div class="jogo"><h3>${j.timeA} vs ${j.timeB}</h3>`;
 
-    if(apostasDoJogo.length > 0) {
-      html += `<div class="minhas-apostas"><h4>Minhas Apostas:</h4>`;
-      apostasDoJogo.forEach((ap, idxGlobal) => {
-        const idxReal = palpitesAntigos.indexOf(ap);
-        html += `<div class="aposta-item">${ap.placarA} X ${ap.placarB}`;
-        if(apostasAbertas) {
-          html += `<button class="btn-apagar" onclick="apagarPalpite(${idxReal})">×</button>`;
-        }
-        html += `</div>`;
-      });
-      html += `</div>`;
-    }
-
     if(apostasAbertas) {
-      html += `<div class="placar-inputs" style="margin-top:15px;">
+      html += `<div class="placar-inputs">
         <input type="number" id="placarA${i}" min="0" placeholder="0">
         <span style="font-size:28px; font-weight:bold;">X</span>
         <input type="number" id="placarB${i}" min="0" placeholder="0"></div></div>`;
@@ -390,20 +358,21 @@ async function abrirTelaJogos() {
   });
 
   if(apostasAbertas) {
-    html += `<button class="btn" onclick="salvar()">Salvar Palpite</button>`;
+    html += `<button class="btn" onclick="salvar()">Salvar Jogo</button>`;
+    html += `<div id="ultimoSalvo" class="ultimo-salvo"></div>`;
   } else {
     html += `<button class="btn" disabled>APOSTAS ENCERRADAS</button>`;
   }
 
-  div.innerHTML = html;
-}
+  if(palpitesAntigos.length > 0) {
+    html += `<div class="seus-palpites"><h4>📋 SEUS PALPITES</h4>`;
+    palpitesAntigos.forEach(p => {
+      html += `<div class="palpite-item">${p.timeA} vs ${p.timeB} <span style="color:#e65100;">${p.placarA} X ${p.placarB}</span></div>`;
+    });
+    html += `</div>`;
+  }
 
-// X agora só apaga da tela, não do Firebase
-window.apagarPalpite = function(idx) {
-  if(!apostasAbertas) return alert("Não pode apagar palpite com apostas encerradas!");
-  if(!confirm("Apagar esse palpite da sua tela?")) return;
-  palpitesAntigos.splice(idx, 1);
-  abrirTelaJogos();
+  div.innerHTML = html;
 }
 
 async function verificarParabens() {
@@ -460,28 +429,34 @@ window.salvar = async function() {
 
   palpitesAntigos = palpitesFinais;
 
-  // Telinha de confirmação
+  // MOSTRA O CAMPO EMBAIXO DO BOTÃO SALVAR com nome + placar
+  const divUltimo = document.getElementById("ultimoSalvo");
+  let htmlUltimo = `<h4>✅ ÚLTIMO PALPITE SALVO</h4>`;
+  htmlUltimo += `<div style="text-align:center; font-weight:600; margin-bottom:10px; color:#002776;">Jogador: ${nomeAtual}</div>`;
+  palpitesNovos.forEach(p => {
+    htmlUltimo += `<div class="ultimo-item">${p.timeA} vs ${p.timeB} <span style="color:#e65100; font-size:20px;">${p.placarA} X ${p.placarB}</span></div>`;
+  });
+  divUltimo.innerHTML = htmlUltimo;
+  divUltimo.style.display = "block";
+
+  // ABRE TELINHA COM CÓDIGO + BOTÃO FINALIZAR
   let htmlModal = `
-    <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; display:flex; align-items:center; justify-content:center;">
-      <div style="background:white; padding:25px; border-radius:20px; max-width:400px; width:90%; border:4px solid #ffdf00; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
-        <h2 style="color:#002776; font-family:Bebas Neue; font-size:28px; text-align:center; margin:0 0 20px 0; letter-spacing:1px;">✅ PALPITE SALVO!</h2>
-        ${palpitesNovos.map(p => `
-          <div style="background:#fff9c4; padding:12px; border-radius:10px; margin-bottom:10px; text-align:center; border:2px solid #002776;">
-            <div style="font-weight:bold; color:#002776; font-size:18px;">${p.timeA} vs ${p.timeB}</div>
-            <div style="font-size:24px; color:#e65100; font-weight:bold; margin-top:5px;">${p.placarA} X ${p.placarB}</div>
-          </div>
-        `).join('')}
-        <button onclick="this.parentElement.parentElement.remove()" style="width:100%; padding:15px; background:#009c3b; color:white; border:none; border-radius:10px; font-weight:bold; font-size:18px; margin-top:15px; cursor:pointer; font-family:Poppins;">Fechar</button>
+    <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; display:flex; align-items:center; justify-content:center;">
+      <div style="background:white; padding:30px; border-radius:25px; max-width:420px; width:90%; border:5px solid #ffdf00; box-shadow:0 15px 50px rgba(0,0,0,0.6);">
+        <h2 style="color:#009c3b; font-family:Bebas Neue; font-size:32px; text-align:center; margin:0 0 20px 0; letter-spacing:2px;">✅ JOGO SALVO!</h2>
+        
+        <div style="background:#ffdf00; padding:20px; border-radius:15px; text-align:center; margin-bottom:20px; border:3px solid #002776;">
+          <div style="font-size:14px; color:#002776; font-weight:600; margin-bottom:5px;">SEU CÓDIGO:</div>
+          <div style="font-size:42px; font-weight:bold; color:#002776; letter-spacing:3px; font-family:Bebas Neue;">${codigoAtual}</div>
+        </div>
+
+        <button onclick="enviarWhats('${codigoAtual}'); this.parentElement.parentElement.remove();" style="width:100%; padding:20px; background:#25D366; color:white; border:none; border-radius:12px; font-weight:bold; font-size:20px; cursor:pointer; font-family:Poppins; text-transform:uppercase;">Finalizar e Enviar no WhatsApp</button>
+        <button onclick="this.parentElement.parentElement.remove()" style="width:100%; padding:15px; background:#ccc; color:#333; border:none; border-radius:12px; font-weight:bold; font-size:16px; margin-top:10px; cursor:pointer; font-family:Poppins;">Fechar</button>
       </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML('beforeend', htmlModal);
-
-  // Abre WhatsApp com o código
-  enviarWhats(codigoAtual);
-
-  abrirTelaJogos();
 }
 
 window.enviarWhats = function(codigo){
